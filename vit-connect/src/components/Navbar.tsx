@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, MessageCircle, Search, User } from 'lucide-react';
 import { useStore } from '../store/useStore';

@@ -8,23 +8,24 @@ export default function CreateCommunity() {
     description: '',
     category: 'Academic'
   });
-  
-  const { addCommunity, currentUser } = useStore();
+
+  const addCommunity = useStore((state) => state.addCommunity); // Access the addCommunity function
+  const currentUser = useStore((state) => state.currentUser);   // Access currentUser from store
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.description.trim()) return;
 
     const newCommunity = {
-      id: formData.name.toLowerCase().replace(/\s+/g, '-'),
+      id: formData.name.toLowerCase().replace(/\s+/g, '-'), // Generates a URL-friendly ID
       name: formData.name.trim(),
       description: formData.description.trim(),
       category: formData.category,
-      members: [currentUser?.id || ''],
-      avatar: `https://images.unsplash.com/photo-1497493292307-31c376b6e479?w=400`
+      members: [currentUser?.id || ''], // Add current user as a member
+      avatar: `https://images.unsplash.com/photo-1497493292307-31c376b6e479?w=400` // Placeholder avatar
     };
 
-    addCommunity(newCommunity);
+    addCommunity(newCommunity); // Call addCommunity to save new community in Firestore
     setFormData({ name: '', description: '', category: 'Academic' });
     setIsOpen(false);
   };
@@ -45,37 +46,37 @@ export default function CreateCommunity() {
             <input
               type="text"
               value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Description</label>
             <textarea
               value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Category</label>
             <select
               value={formData.category}
-              onChange={e => setFormData({ ...formData, category: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              <option>Academic</option>
-              <option>Club</option>
-              <option>Research</option>
-              <option>General</option>
+              <option value="Academic">Academic</option>
+              <option value="Club">Club</option>
+              <option value="Research">Research</option>
+              <option value="General">General</option>
             </select>
           </div>
-          
+
           <div className="flex justify-end space-x-3">
             <button
               type="button"

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 interface PostFormProps {
   communityId?: string;
@@ -11,26 +13,41 @@ export default function PostForm({ communityId }: PostFormProps) {
   const [content, setContent] = useState('');
   const { currentUser, addPost } = useStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
 
-    const newPost = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      content: content.trim(),
-      authorId: currentUser?.id || '',
-      communityId: communityId || 'general',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      likes: 0,
-      comments: []
-    };
+    try {
+      const docRef = await addDoc(collection(db, 'posts'), {
+        title: title.trim(),
+        content: content.trim(),
+        authorId: currentUser?.id || '',
+        communityId: communityId || 'general',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        likes: 0,
+        comments: []
+      });
 
-    addPost(newPost);
-    setTitle('');
-    setContent('');
-    setIsExpanded(false);
+      const newPost = {
+        id: docRef.id,
+        title: title.trim(),
+        content: content.trim(),
+        authorId: currentUser?.id || '',
+        communityId: communityId || 'general',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        likes: 0,
+        comments: []
+      };
+
+      await addPost(newPost);
+      setTitle('');
+      setContent('');
+      setIsExpanded(false);
+    } catch (error) {
+      console.error('Error creating post:', error);
+    }
   };
 
   if (!isExpanded) {

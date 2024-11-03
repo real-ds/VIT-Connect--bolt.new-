@@ -1,81 +1,73 @@
 import { create } from 'zustand';
-import { User, Post, Community } from '../types';
-import { initialCommunities, initialPosts } from '../data/initialData';
-
-interface Store {
-  currentUser: User | null;
-  posts: Post[];
-  communities: Community[];
-  page: number;
-  hasMore: boolean;
-  loading: boolean;
-  setCurrentUser: (user: User | null) => void;
-  updateUserProfile: (user: User) => void;
-  addPost: (post: Post) => void;
-  addCommunity: (community: Community) => void;
-  joinCommunity: (communityId: string, userId: string) => void;
-  likePost: (postId: string) => void;
-  addComment: (postId: string, comment: Comment) => void;
-  loadMorePosts: () => void;
-}
-
-const POSTS_PER_PAGE = 5;
+import { collection, getDocs, query, orderBy, limit, addDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import { Post, Community, Store } from '../types';
 
 export const useStore = create<Store>((set, get) => ({
   currentUser: null,
-  posts: initialPosts.slice(0, POSTS_PER_PAGE),
-  communities: initialCommunities,
-  page: 1,
-  hasMore: initialPosts.length > POSTS_PER_PAGE,
+  posts: [],
+  communities: [],
   loading: false,
+  error: null,
+
   setCurrentUser: (user) => set({ currentUser: user }),
-  updateUserProfile: (user) => set({ currentUser: user }),
-  addPost: (post) => set((state) => ({ posts: [post, ...state.posts] })),
-  addCommunity: (community) => 
-    set((state) => ({ communities: [...state.communities, community] })),
-  joinCommunity: (communityId, userId) =>
-    set((state) => ({
-      communities: state.communities.map((c) =>
-        c.id === communityId
-          ? { ...c, members: [...c.members, userId] }
-          : c
-      ),
-    })),
-  likePost: (postId) =>
-    set((state) => ({
-      posts: state.posts.map((post) =>
-        post.id === postId
-          ? { ...post, likes: post.likes + 1 }
-          : post
-      ),
-    })),
-  addComment: (postId, comment) =>
-    set((state) => ({
-      posts: state.posts.map((post) =>
-        post.id === postId
-          ? { ...post, comments: [...post.comments, comment] }
-          : post
-      ),
-    })),
-  loadMorePosts: () => {
-    const { page, loading, hasMore } = get();
-    
-    if (loading || !hasMore) return;
-    
-    set({ loading: true });
-    
-    setTimeout(() => {
-      const nextPage = page + 1;
-      const start = page * POSTS_PER_PAGE;
-      const end = start + POSTS_PER_PAGE;
-      const newPosts = initialPosts.slice(0, end);
-      
-      set({
-        posts: newPosts,
-        page: nextPage,
-        hasMore: end < initialPosts.length,
-        loading: false
-      });
-    }, 1000);
+
+  fetchPosts: async () => {
+    set({ loading: true, error: null });
+    try {
+      const postsQuery = query(
+        collection(db, 'posts'),
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      );
+
+      const snapshot = await getDocs(postsQuery);
+      const posts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Post));
+
+      set({ posts, loading: false });
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      set({ error: 'Failed to fetch posts', loading: false });
+    }
   },
+
+  addCommunity: async (community: Community) => {
+    set({ loading: true, error: null });
+    try {
+      const docRef = await addDoc(collection(db, 'communities'), community);
+      set({
+        communities: [...get().communities, { ...community, id: docRef.id }],
+        loading: false,
+      });
+    } catch (error) {
+      console.error('Error adding community:', error);
+      set({ error: 'Failed to add community', loading: false });
+    }
+  },
+
+  addPost: async (post: Post) => {
+    set({ loading: true, error: null });
+    try {
+      const docRef = await addDoc(collection(db, 'posts'), post);
+      set((state) => ({
+        posts: [...state.posts, { ...post, id: docRef.id }],
+        loading: false,
+      }));
+    } catch (error) {
+      console.error('Error adding post:', error);
+      set({ error: 'Failed to add post', loading: false });
+    }
+  },
+
+  joinCommunity: (communityId: string, userId: string) => 
+    set((state) => ({
+      communities: state.communities.map(community =>
+        community.id === communityId
+          ? { ...community, members: [...community.members, userId] }
+          : community
+      )
+    })),
 }));

@@ -40,3 +40,16 @@ export interface User {
     members: string[];
     avatar: string;
   }
+
+  export interface Store {
+    currentUser: User | null;
+    posts: Post[];
+    communities: Community[];
+    loading: boolean;
+    error: string | null;
+    setCurrentUser: (user: User | null) => void;
+    fetchPosts: () => Promise<void>;
+    addCommunity: (community: Community) => Promise<void>;
+    addPost: (post: Post) => Promise<void>;
+    joinCommunity: (communityId: string, userId: string) => void;
+  } 

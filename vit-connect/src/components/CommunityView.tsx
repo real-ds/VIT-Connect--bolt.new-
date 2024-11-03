@@ -1,4 +1,3 @@
-import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Users, Info } from 'lucide-react';
@@ -14,7 +13,8 @@ export default function CommunityView() {
     return <div>Community not found</div>;
   }
 
-  const isMember = community.members.includes(currentUser?.id || '');
+  // Ensure community.members is defined and check membership
+  const isMember = Array.isArray(community.members) && community.members.includes(currentUser?.id || '');
 
   return (
     <div className="space-y-6">
