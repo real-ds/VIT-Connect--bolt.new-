@@ -15,9 +15,10 @@ export interface User {
   export interface Post {
     id: string;
     title: string;
-    content: string;
+    content: string | File;
     authorId: string;
     communityId: string;
+    communityName: string;
     createdAt: string;
     updatedAt: string;
     likes: number;

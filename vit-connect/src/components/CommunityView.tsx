@@ -1,3 +1,4 @@
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Users, Info } from 'lucide-react';
@@ -13,8 +14,13 @@ export default function CommunityView() {
     return <div>Community not found</div>;
   }
 
-  // Ensure community.members is defined and check membership
-  const isMember = Array.isArray(community.members) && community.members.includes(currentUser?.id || '');
+  const isMember = community.members.includes(currentUser?.id || '');
+
+  const handleJoinCommunity = () => {
+    if (currentUser) {
+      joinCommunity(community.id, currentUser.id);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -35,8 +41,8 @@ export default function CommunityView() {
             </div>
             {!isMember && (
               <button
-                onClick={() => joinCommunity(community.id, currentUser?.id || '')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                onClick={handleJoinCommunity}
+                className="px-4 py-2 mt-20 mr-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Join Community
               </button>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { Loader } from 'lucide-react';
 
@@ -36,10 +36,11 @@ export default function Feed() {
   return (
     <div className="space-y-6">
       {posts.map((post) => (
-        <article key={post.id} className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
-          <p className="text-gray-600">{post.content}</p>
-          <div className="mt-4 pt-4 border-t text-sm text-gray-500">
+        <article key={post.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6">
+          <h2 className="text-2xl font-bold mb-3">{post.communityName}</h2>
+          <p className="text-gray-700 mb-4 text-xl font-bold">{post.title}</p>
+          <p className="text-gray-700 mb-4">{post.content}</p>
+          <div className="mt-2 pt-2  border-gray-200 text-sm text-gray-500">
             {new Date(post.createdAt).toLocaleDateString()}
           </div>
         </article>

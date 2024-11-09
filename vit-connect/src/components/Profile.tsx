@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { User as UserIcon, Linkedin, Github, FileText, Edit2, Save, Plus } from 'lucide-react';
+import { User as UserIcon, Linkedin, Github, FileText, Edit2, Save, Plus, Loader } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export default function Profile() {
   const { currentUser, communities, updateUserProfile } = useStore();
   const userCommunities = communities.filter(c => c.members.includes(currentUser?.id || ''));
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [profile, setProfile] = useState({
     name: currentUser?.name || '',
     department: currentUser?.department || '',
@@ -15,17 +17,31 @@ export default function Profile() {
     resumeUrl: currentUser?.resumeUrl || ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUserProfile({
-      ...currentUser!,
-      ...profile,
-      socialLinks: {
-        linkedin: profile.linkedin,
-        github: profile.github
-      }
-    });
-    setIsEditing(false);
+    setLoading(true);
+    setError('');
+
+    try {
+      const updatedUser = {
+        ...currentUser!,
+        name: profile.name,
+        department: profile.department,
+        bio: profile.bio,
+        socialLinks: {
+          linkedin: profile.linkedin,
+          github: profile.github
+        },
+        resumeUrl: profile.resumeUrl
+      };
+
+      await updateUserProfile(updatedUser);
+      setIsEditing(false);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,15 +57,21 @@ export default function Profile() {
                 className="w-24 h-24 rounded-full border-4 border-white"
               />
               <div>
-                <h1 className="text-2xl font-bold">{currentUser?.name}</h1>
+                <h1 className=" mt-8 text-2xl font-bold">{currentUser?.name}</h1>
                 <p className="text-gray-600">{currentUser?.department}</p>
               </div>
             </div>
             <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100"
+              onClick={() => !loading && (isEditing ? handleSubmit : setIsEditing(true))}
+              disabled={loading}
+              className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50"
             >
-              {isEditing ? (
+              {loading ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : isEditing ? (
                 <>
                   <Save className="w-4 h-4" />
                   <span>Save Profile</span>
@@ -63,6 +85,12 @@ export default function Profile() {
             </button>
           </div>
 
+          {error && (
+            <div className="mt-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           {isEditing ? (
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -72,17 +100,26 @@ export default function Profile() {
                     type="text"
                     value={profile.name}
                     onChange={e => setProfile({ ...profile, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Department</label>
-                  <input
-                    type="text"
+                  <select
                     value={profile.department}
                     onChange={e => setProfile({ ...profile, department: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select Department</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Mechanical">Mechanical</option>
+                    <option value="Civil">Civil</option>
+                    <option value="Chemical">Chemical</option>
+                  </select>
                 </div>
               </div>
 
@@ -92,7 +129,8 @@ export default function Profile() {
                   value={profile.bio}
                   onChange={e => setProfile({ ...profile, bio: e.target.value })}
                   rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Tell us about yourself..."
                 />
               </div>
 
@@ -104,7 +142,7 @@ export default function Profile() {
                     placeholder="LinkedIn Profile URL"
                     value={profile.linkedin}
                     onChange={e => setProfile({ ...profile, linkedin: e.target.value })}
-                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="flex-1 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -114,28 +152,14 @@ export default function Profile() {
                     placeholder="GitHub Profile URL"
                     value={profile.github}
                     onChange={e => setProfile({ ...profile, github: e.target.value })}
-                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="flex-1 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Resume</label>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  className="mt-1 block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100"
-                />
               </div>
             </form>
           ) : (
             <div className="mt-6 space-y-6">
-              <p className="text-gray-600">{currentUser?.bio}</p>
+              <p className="text-gray-600">{currentUser?.bio || 'No bio added yet'}</p>
               
               <div className="flex space-x-4">
                 {currentUser?.socialLinks?.linkedin && (
@@ -158,17 +182,6 @@ export default function Profile() {
                   >
                     <Github className="w-5 h-5" />
                     <span>GitHub</span>
-                  </a>
-                )}
-                {currentUser?.resumeUrl && (
-                  <a
-                    href={currentUser.resumeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
-                  >
-                    <FileText className="w-5 h-5" />
-                    <span>Resume</span>
                   </a>
                 )}
               </div>
